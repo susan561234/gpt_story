@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, url_for, redirect, make_response, g
+from flask import Flask, render_template, jsonify, request, url_for, redirect, make_response
 import chaptgptget
 import Image
 from unidecode import unidecode
@@ -12,7 +12,7 @@ from dash.dependencies import Input, Output
 import uuid
 from dash import html
 from dash import dcc
-
+from openai.error import RateLimitError
 def process_image_and_voice(main_character,story_notbutton,buttom1,buttom2,buttom3):
     #image_url = Image.Image1(story_notbutton)
     image_url = Image.stable_diffusion_photo(main_character,story_notbutton,buttom1,buttom2,buttom3)
@@ -20,14 +20,11 @@ def process_image_and_voice(main_character,story_notbutton,buttom1,buttom2,butto
     return image_url
 def page_not_found(e):
   return render_template('404.html'), 404
+
 app = Flask(__name__)
 app.register_error_handler(404, page_not_found)
-option_count = 0
 
-content = ""
-imgurl = dict()
 DB = mongod.DB()
-story_generator = chaptgptget.StoryGenerator()
 external_stylesheets = [
     {
         "href": "https://fonts.googleapis.com/css2?"
@@ -38,7 +35,7 @@ external_stylesheets = [
 app1 = dash.Dash(__name__, server=app, url_base_pathname='/dash/',external_stylesheets=external_stylesheets)
 @app.before_request
 def before_request_func():
-    global count1, count2, count3, df, count4 , count5
+    global count1, count2, count3, df, count4, count5
     if request.path == '/dash/': 
         count1, count2, count3,count4 = DB.DB_find_style(pd.date_range(start='2023-05-18', periods=30))
         count5 = DB.DB_find_people(pd.date_range(start='2023-05-18', periods=30))
@@ -122,6 +119,12 @@ def update_scatter_plot(selected_index):
 
 @app.route('/', methods = ['POST', 'GET'])
 def index():
+    global option_count, ip, start_time, content , imgurl, story_generator,DB
+    option_count = 0
+    content = ""
+    imgurl = dict()
+    story_generator = chaptgptget.StoryGenerator()
+    DB = mongod.DB()
     user_id = request.cookies.get('user_id')
     if user_id is None:
         user_id = str(uuid.uuid4())
@@ -129,7 +132,7 @@ def index():
         response.set_cookie('user_id', user_id)
     else:
         response = make_response()
-    global option_count, ip, start_time
+    
     option_count = 0
     ip = request.remote_addr
     start_time = datetime.datetime.now()
@@ -141,11 +144,21 @@ def teammember():
 @app.route('/start', methods = ['POST', 'GET'])
 def start():
     global story_name, imgurl, content, image_url, main_character, style
-    story = story_generator.generate_story_beginning(style)
-    story_split =  story.split("故事名稱:")
+    try:
+        story = story_generator.generate_story_beginning(style)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'redirect': 404})
+    if "故事名稱:" in story:
+        story_split =  story.split("故事名稱:")
+        story_split_1 = story_split[1].split("故事開頭:")
+    elif "故事名稱：" in story:
+        story_split =  story.split("故事名稱：")
+        story_split_1 = story_split[1].split("故事開頭：")
+    else:
+        pass
     main_character = story_split[0]
-    story_split_1 = story_split[1].split("故事開頭:")
-    print(story_split_1)
+
     story_name = "<<" + story_split_1[0] + ">>"
     if "選項:1." in story:
         button = story.split("選項:1.")[1]
@@ -161,7 +174,6 @@ def start():
     button1 = button.split("2.")[0]
     button3 = button.split("3.")[1]  
     button2 = button[len(button1)+2:len(button)-len(button3)-2]
-    
 
     with ThreadPoolExecutor() as executor:
         future = executor.submit(process_image_and_voice, main_character,story_notbutton,button1,button2,button3)
@@ -176,25 +188,64 @@ def update_story():
     button_value = request.form.get('buttonValue')
     story_notbutton = request.form.get('storyNotButton')  
     updated_data, option_count = story_generator.generate_story_item(button_value, option_count)
+    try:
+        updated_data, option_count = story_generator.generate_story_item(button_value, option_count)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'redirect': 404})
     print(updated_data, option_count)
+    updated_data = updated_data[5:]
+    if option_count == 4 :
+        content += updated_data
+        if "。" in updated_data:
+            count = updated_data.split("。")
+            if len(count) == 3:
+                button_1 = count[0]
+                button_2 = count[1]
+                button_3 = count[2]
+            elif  len(count) >3:
+                button_1 = count[0]+count[1]
+                button_2 = count[len(count)-2]
+                button_3 = count[len(count)-1]
+            elif len(count) <3:
+                if len(count) == 2:
+                    button_1 = count[0]+count[1]
+                    button_2 = count[0]+count[1]
+                    button_3 = count[1]
+                else :
+                    button_1 = count[0]+count[0]
+                    button_2 = count[0]+count[0]
+                    button_3 = count[0]
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(process_image_and_voice, main_character,story_notbutton,button_1,button_2,button_3)
+            image_url = future.result()
+            print(image_url)
+            imgurl["final"] = image_url
+        DB.DB_over(ip,start_time,datetime.datetime.now(),datetime.datetime.combine(datetime.datetime.now().date(), datetime.datetime.min.time()),style,story_name,content,imgurl)
+        image_url1 = image_url[0]
+        response = {
+            'story': updated_data,
+            'image_url': image_url1,
+            'option_count': str(option_count),
+            'redirect': option_count
+        }
+        return jsonify(response)
     if "選項:1." in updated_data:
-
         button = updated_data.split("選項:1.")[1]
         story_notbutton = updated_data.split("選項:1.")[0][5:]
-
     elif "選項: 1." in updated_data:
-
         button = updated_data.split("選項: 1.")[1]
         story_notbutton = updated_data.split("選項: 1.")[0][5:]
     else:
-
         button = updated_data.split("選項：1.")[1]
         story_notbutton = updated_data.split("選項：1.")[0][5:]
 
+    other_word = story_notbutton.split("故事內容")[0]
+    if len(other_word)>5 :
+        story_notbutton = story_notbutton.split("故事內容")[1][1:]
     button1 = button.split("2.")[0]
     button3 = button.split("3.")[1]  
     button2 = button[len(button1)+2:len(button)-len(button3)-2]
-
     
     with ThreadPoolExecutor() as executor:
         future = executor.submit(process_image_and_voice, main_character,story_notbutton,button1,button2,button3)
@@ -214,49 +265,10 @@ def update_story():
         'button1': button1,
         'button2': button2,
         'button3': button3,
-        'redirect': option_count == 3,
         'option_count': str(option_count),
     }
-
     return jsonify(response)
-@app.route('/story_over', methods = ['POST', 'GET'])
-def story_over():
-    global option_count, content, main_character, style, start_time
-    button_value = request.form.get('buttonValue')
-    updated_data,option_count = story_generator.generate_story_item(button_value,option_count)
-    if "：" in updated_data:
-        updated_data1 = updated_data.split("：")[1]
-        story_notbutton = updated_data1[:len(updated_data1)-2]
-    else:
-        updated_data1 = updated_data.split(":")[1]
-        story_notbutton = updated_data1[:len(updated_data1)-2]
-    content += story_notbutton
-    if "。" in story_notbutton:
-        count = story_notbutton.split("。")
-        if len(count) == 3:
-            button_1 = count[0]
-            button_2 = count[1]
-            button_3 = count[2]
-        elif  len(count) >3:
-            button_1 = count[0]+count[1]
-            button_2 = count[len(count)-2]
-            button_3 = count[len(count)-1]
-        elif len(count) <3:
-            if len(count) == 2:
-                button_1 = count[0]+count[1]
-                button_2 = count[0]+count[1]
-                button_3 = count[1]
-            else :
-                button_1 = count[0]+count[0]
-                button_2 = count[0]+count[0]
-                button_3 = count[0]
-    with ThreadPoolExecutor() as executor:
-        future = executor.submit(process_image_and_voice, main_character,story_notbutton,button_1,button_2,button_3)
-        image_url = future.result()
-        imgurl["final"] = image_url
-    DB.DB_over(ip,start_time,datetime.datetime.now(),datetime.datetime.combine(datetime.datetime.now().date(), datetime.datetime.min.time()),style,story_name,content,imgurl)
-    image_url1 = image_url[0]
-    return render_template('test1.html',story=story_notbutton,image_url=image_url1,story_name=story_name,option_count=option_count)
+
 @app.route('/redirect')
 def redirectToHello():
     global style

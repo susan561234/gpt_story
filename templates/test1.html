@@ -14,10 +14,6 @@
 	<style>
 		body {
 			background-color: #f7dff1;
-			/* background-image: url('../static/images/bgp4.jpg'); ;
-			background-size: cover; /* 調整背景圖像以覆蓋整個元素 */
-			/* background-repeat: no-repeat; 不重複背景圖像 */
-			/* background-position: center; 將背景圖像置於中心位置 */ 
 		}
 		.text-container {
 			width: 100%;
@@ -68,9 +64,9 @@
 			text-decoration: none;
 			background-color: rgba(7, 237, 111, 0.984);
 			z-index: 10;
-			border: none; /* Remove the button border */
-			width: 26px; /* Set the button width */
-			height: 26px; /* Set the button height */	
+			border: none;
+			width: 26px; 
+			height: 26px; 	
 			}	
 		.download-btn:hover::before {
 			content: '下載圖片(・ω・)ノ';
@@ -150,24 +146,6 @@
 			border: none;
 			font-size: 16px;
 			cursor: pointer;
-		}
-		#back-to-index	{
-			width: 125px;
-			height: 85px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background-image: radial-gradient(circle at center, #bedee7, #c0dcfe);
-			border: none;
-			flex-wrap: wrap;
-			display: inline-block;
-			margin: 0 50px 100px 0;
-			padding: 10px 20px;
-			color: #333;
-			min-width: 0;
-			cursor: pointer;
-			font-family: 'cwTeXYen', sans-serif;
-			font-size: 20px;
 		}
 		@media screen and (max-width: 420px) {
 		.story {
@@ -265,30 +243,23 @@
 				</div>
             </div>
         </div>
-		{% if option_count == 4 %}
-			<div class="text-center mt-5">
-				<button id="back-to-index" class="btn btn-primary">回到主頁</button>
+		<div class="row my-5">
+			<div class="col-md-4 col-sm-4 col-md-4 text-center">
+				<button class="btn btn-primary btn-block fixed-size-btn" data-story="{{ button1 }}" onclick="updateStory(event)">{{ button1 }}</button>
 			</div>
-		{% else %}
-			<div class="row my-5">
-				<div class="col-md-4 col-sm-4 col-md-4 text-center">
-					<button class="btn btn-primary btn-block fixed-size-btn" data-story="{{ button1 }}" onclick="updateStory(event)">{{ button1 }}</button>
-				</div>
-				<div class="col-md-4 col-sm-4 col-md-4 text-center">
-					<button class="btn btn-secondary btn-block fixed-size-btn" data-story="{{ button2 }}" onclick="updateStory(event)">{{ button2 }}</button>
-				</div>
-				<div class="col-md-4 col-sm-4 col-md-4 text-center">
-					<button class="btn btn-success btn-block fixed-size-btn" data-story="{{ button3 }}" onclick="updateStory(event)">{{ button3 }}</button>
-				</div>
+			<div class="col-md-4 col-sm-4 col-md-4 text-center">
+				<button class="btn btn-secondary btn-block fixed-size-btn" data-story="{{ button2 }}" onclick="updateStory(event)">{{ button2 }}</button>
 			</div>
-		{% endif %}
+			<div class="col-md-4 col-sm-4 col-md-4 text-center">
+				<button class="btn btn-success btn-block fixed-size-btn" data-story="{{ button3 }}" onclick="updateStory(event)">{{ button3 }}</button>
+			</div>
+		</div>
 		<script>
 			function setButtonSize() {
 				const buttons = document.querySelectorAll('.fixed-size-btn');
 				let maxWidth = 0;
 				let maxHeight = 0;
 		
-				// Find the maximum text width and height among the buttons
 				buttons.forEach(button => {
 					const textWidth = button.scrollWidth;
 					const textHeight = button.scrollHeight;
@@ -315,7 +286,6 @@
 			function updateStory(event) {
 				const item = event.target.getAttribute('data-story');
 				const storyNotButton = document.querySelector('h2').innerText;
-				// const audioElement = document.getElementById('myAudio');
 				var loading = document.getElementById('loading');
         		loading.style.display = 'flex';	
 				$.ajax({
@@ -328,19 +298,29 @@
 					success: function (response) {
 						loading.style.display = 'none';
 						if (response.redirect) {
-        					window.location.href = "/story_over";
+							if(response.redirect==404) {
+								window.location.href = "/";
+							}
+        					$('.fixed-size-btn').remove(); 
+							$('body').append('<button id="back-to-index" class="btn btn-primary" style="width: 125px; height: 85px; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at center, #bedee7, #c0dcfe); border: none; flex-wrap: wrap; display: inline-block; margin: 0 50% 20px 0; padding: 10px 20px; color: #333; cursor: pointer; font-size: 20px;">回到主頁</button>');
+							document.querySelector('.img-fluid').setAttribute('src', response.image_url);
+							document.querySelector('#story-text').innerText = response.story; 
+							$(document).ready(function () {
+								$("#back-to-index").on("click", function () {
+									window.location.href = "/";
+								});
+							});
    						 } else {
 							document.querySelector('.img-fluid').setAttribute('src', response.image_url);
 							document.querySelector('#story-text').innerText = response.story;
 							const buttons = document.querySelectorAll('.btn-block');
-							// audioElement.setAttribute('src', '/static/file'+response.option_count+'.mp3');
 							for (let i = 0; i < buttons.length; i++) {
 								buttons[i].innerText = response['button' + (i + 1)];
 								buttons[i].setAttribute('data-story', response['button' + (i + 1)]);
 							}
 							resetButtonSize();
 							setButtonSize();
-						}
+					}
 				}
 		});
 	}
@@ -398,13 +378,6 @@
 							console.log("Error:", error);
 						}
 					});
-				});
-			});
-		</script>
-		<script>
-			$(document).ready(function () {
-				$("#back-to-index").on("click", function () {
-					window.location.href = "/";
 				});
 			});
 		</script>
