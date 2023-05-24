@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Chat-GPT</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.jpg') }}">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/earlyaccess/cwtexyen.css" rel="stylesheet">
+	<script src="{{ url_for('static', filename='live2dcubismcore.js') }}"></script>
+    <script src="https://unpkg.com/core-js-bundle@3.6.1/minified.js"></script>
+    <script src = "{{ url_for('static', filename='TypeScript/Demo/dist/bundle.js')}}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<style>
+		body {
+			background-color: #f7dff1;
+			/* background-image: url('../static/images/bgp4.jpg'); ;
+			background-size: cover; /* 調整背景圖像以覆蓋整個元素 */
+			/* background-repeat: no-repeat; 不重複背景圖像 */
+			/* background-position: center; 將背景圖像置於中心位置 */ 
+		}
+		.text-container {
+			width: 100%;
+			height: 350px;
+			overflow: auto;
+			resize: none;
+			border: 1px solid #ccc;
+			padding: 10px;
+			box-sizing: border-box;
+		}
+		#story-text{
+			font-size: 30px;
+			font-family: 'cwTeXYen', sans-serif;
+		}
+		.fixed-size-btn {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-image: radial-gradient(circle at center, #bedee7, #c0dcfe);
+			border: none;
+			flex-wrap: wrap;
+			display: inline-block;
+			margin: 0 50px 100px 0;
+			padding: 10px 20px;
+			color: #333;
+			min-width: 0;
+			cursor: pointer;
+			font-family: 'cwTeXYen', sans-serif;
+			font-size: 20px;
+		}
+		.fixed-size-btn:hover { 
+			background: #92d6f8;
+			color: #fff;
+		}
+		.img-container {
+			position: relative;
+			display: inline-block;
+		}
+		.download-btn {
+			background-image: url('../static/images/download.png');
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+			display: none;
+			position: absolute;
+			top: 5px;
+			right: 5px;
+			text-decoration: none;
+			background-color: rgba(7, 237, 111, 0.984);
+			z-index: 10;
+			border: none; /* Remove the button border */
+			width: 26px; /* Set the button width */
+			height: 26px; /* Set the button height */	
+			}	
+		.download-btn:hover::before {
+			content: '下載圖片(・ω・)ノ';
+			display: inline-block; /* 確保元素可以接受寬度和高度設定 */
+			width: 150px; /* 設定懸浮文字框的寬度 */
+			height: 35px; /* 設定懸浮文字框的高度 */
+			text-align: center; /* 使文字水平居中 */
+			background-color: rgba(249, 248, 248, 0.925); /* 設定背景顏色，您可以根據需要更改 */
+			color: #413f3f; /* 設定文字顏色，您可以根據需要更改 */
+			border-radius: 5px; /* 如果需要圓角，可以添加這個屬性 */
+			position: absolute; /* 設定為絕對定位，以便更改懸浮文字框位置 */
+			top: -40px; /* 設定懸浮文字框與按鈕之間的距離 */
+			left: 50%; /* 將懸浮文字框水平居中對齊按鈕 */
+			transform: translateX(-50%); /* 修正懸浮文字框的水平位置，使其完全居中對齊按鈕 */
+		}
+		.img-container:hover .download-btn {
+			display: block;
+			
+		}
+		#live2d { 
+			width: 100%;
+			height: 350px;
+			cursor: grab;
+			border: 1px solid #ccc;
+			background-color: rgb(237, 186, 226);
+			position: relative; 
+		}
+		.canvas-container:hover::before {
+			content: '點擊有驚喜XD';
+			display: inline-block; 
+			width: 200px;
+			height: 35px; 
+			text-align: center; 
+			background-color: rgba(249, 248, 248, 0.925); 
+			color: #413f3f; 
+			border-radius: 5px; 
+			position: absolute; 
+			top: 20px; 
+			left: 30px; 
+			z-index: 9999;
+		}
+		.canvas-container {
+			position: relative;
+			width: 100%;
+			height: 350px;
+			overflow: hidden;
+		} 
+		#loading {
+ 			position: fixed;
+			z-index: 9999;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(255, 255, 255, 0.8); /* 加载动画背景色，可调整透明度 */
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+		.header {
+			background-color: black;
+			width: 100%;
+			height: 15%;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0 20px;
+		}
+		.header h1 {
+			margin: 0 auto;
+		}
+		
+		.header .home-button {
+			color: white;
+			background-color: transparent;
+			border: none;
+			font-size: 16px;
+			cursor: pointer;
+		}
+		#back-to-index	{
+			width: 125px;
+			height: 85px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-image: radial-gradient(circle at center, #bedee7, #c0dcfe);
+			border: none;
+			flex-wrap: wrap;
+			display: inline-block;
+			margin: 0 50px 100px 0;
+			padding: 10px 20px;
+			color: #333;
+			min-width: 0;
+			cursor: pointer;
+			font-family: 'cwTeXYen', sans-serif;
+			font-size: 20px;
+		}
+		@media screen and (max-width: 420px) {
+		.story {
+			font-size: 30px;
+        }
+		.fixed-size-btn{
+			margin: 0 0 100px 0;
+			padding: 10px 20px;
+		}
+		.download-btn:hover::before {
+			text-align: center; /* 使文字水平居中 */
+			top: -40px; /* 設定懸浮文字框與按鈕之間的距離 */
+			left: 20%; /* 將懸浮文字框水平居中對齊按鈕 */
+			transform: translateX(-90%); /* 修正懸浮文字框的水平位置，使其完全居中對齊按鈕 */
+		}
+
+        }
+      @media screen and (min-width: 430px) and (max-width: 750px){
+		.story {
+			font-size: 35px;
+        }
+		.fixed-size-btn{
+			margin: 0 0 100px 0;
+			padding: 10px 20px;
+		}
+	}
+	</style>
+</head>
+<body ondragstart="return false" onselectstart="return false" onContextMenu="return false">
+	<script>
+		window.addEventListener('load', function() {
+		  var loading = document.getElementById('loading');
+		  loading.style.display = 'none';
+		});
+	</script>
+	<div id="loading">
+		<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin:auto;background:none;display:block;" width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+		<g>
+		  <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1" begin="-0.1s"></animateTransform>
+		  <circle cx="50" cy="50" r="39.891" stroke="#6994b7" stroke-width="14.4" fill="none" stroke-dasharray="0 300">
+			<animate attributeName="stroke-dasharray" values="15 300;55.1413599195142 300;15 300" keyTimes="0;0.5;1" dur="1s" repeatCount="indefinite" calcMode="linear" keySplines="0 0.4 0.6 1;0.4 0 1 0.6" begin="-0.046s"></animate>
+		  </circle>
+		  <circle cx="50" cy="50" r="39.891" stroke="#eeeeee" stroke-width="7.2" fill="none" stroke-dasharray="0 300">
+			<animate attributeName="stroke-dasharray" values="15 300;55.1413599195142 300;15 300" keyTimes="0;0.5;1" dur="1s" repeatCount="indefinite" calcMode="linear" keySplines="0 0.4 0.6 1;0.4 0 1 0.6" begin="-0.046s"></animate>
+		  </circle>
+		  <circle cx="50" cy="50" r="32.771" stroke="#000000" stroke-width="1" fill="none" stroke-dasharray="0 300">
+			<animate attributeName="stroke-dasharray" values="15 300;45.299378454348094 300;15 300" keyTimes="0;0.5;1" dur="1s" repeatCount="indefinite" calcMode="linear" keySplines="0 0.4 0.6 1;0.4 0 1 0.6" begin="-0.046s"></animate>
+		  </circle>
+		  <circle cx="50" cy="50" r="47.171" stroke="#000000" stroke-width="1" fill="none" stroke-dasharray="0 300">
+			<animate attributeName="stroke-dasharray" values="15 300;66.03388996804073 300;15 300" keyTimes="0;0.5;1" dur="1s" repeatCount="indefinite" calcMode="linear" keySplines="0 0.4 0.6 1;0.4 0 1 0.6" begin="-0.046s"></animate>
+		  </circle>
+		</g>	
+		<g>
+		  <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1"></animateTransform>
+		  <path fill="#6994b7" stroke="#000000" d="M97.2,50.1c0,6.1-1.2,12.2-3.5,17.9l-13.3-5.4c1.6-3.9,2.4-8.2,2.4-12.4"></path>
+		  <path fill="#eeeeee" d="M93.5,49.9c0,1.2,0,2.7-0.1,3.9l-0.4,3.6c-0.4,2-2.3,3.3-4.1,2.8l-0.2-0.1c-1.8-0.5-3.1-2.3-2.7-3.9l0.4-3 c0.1-1,0.1-2.3,0.1-3.3"></path>
+		  <path fill="#6994b7" stroke="#000000" d="M85.4,62.7c-0.2,0.7-0.5,1.4-0.8,2.1c-0.3,0.7-0.6,1.4-0.9,2c-0.6,1.1-2,1.4-3.2,0.8c-1.1-0.7-1.7-2-1.2-2.9 c0.3-0.6,0.5-1.2,0.8-1.8c0.2-0.6,0.6-1.2,0.7-1.8"></path>
+		  <path fill="#6994b7" stroke="#000000" d="M94.5,65.8c-0.3,0.9-0.7,1.7-1,2.6c-0.4,0.9-0.7,1.7-1.1,2.5c-0.7,1.4-2.3,1.9-3.4,1.3h0 c-1.1-0.7-1.5-2.2-0.9-3.4c0.4-0.8,0.7-1.5,1-2.3c0.3-0.8,0.7-1.5,0.9-2.3"></path>
+		</g>
+		<g>
+		  <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" keyTimes="0;1" dur="1s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1" begin="-0.1s"></animateTransform>
+		  <path fill="#eeeeee" stroke="#000000" d="M86.9,35.3l-6,2.4c-0.4-1.2-1.1-2.4-1.7-3.5c-0.2-0.5,0.3-1.1,0.9-1C82.3,33.8,84.8,34.4,86.9,35.3z"></path>
+		  <path fill="#eeeeee" stroke="#000000" d="M87.1,35.3l6-2.4c-0.6-1.7-1.5-3.3-2.3-4.9c-0.3-0.7-1.2-0.6-1.4,0.1C88.8,30.6,88.2,33,87.1,35.3z"></path>
+		  <path fill="#6994b7" stroke="#000000" d="M82.8,50.1c0-3.4-0.5-6.8-1.6-10c-0.2-0.8-0.4-1.5-0.3-2.3c0.1-0.8,0.4-1.6,0.7-2.4c0.7-1.5,1.9-3.1,3.7-4l0,0 c1.8-0.9,3.7-1.1,5.6-0.3c0.9,0.4,1.7,1,2.4,1.8c0.7,0.8,1.3,1.7,1.7,2.8c1.5,4.6,2.2,9.5,2.3,14.4"></path>
+		  <path fill="#eeeeee" d="M86.3,50.2l0-0.9l-0.1-0.9l-0.1-1.9c0-0.9,0.2-1.7,0.7-2.3c0.5-0.7,1.3-1.2,2.3-1.4l0.3,0 c0.9-0.2,1.9,0,2.6,0.6c0.7,0.5,1.3,1.4,1.4,2.4l0.2,2.2l0.1,1.1l0,1.1"></path>
+		  <path fill="#ff9922" d="M93.2,34.6c0.1,0.4-0.3,0.8-0.9,1c-0.6,0.2-1.2,0.1-1.4-0.2c-0.1-0.3,0.3-0.8,0.9-1 C92.4,34.2,93,34.3,93.2,34.6z"></path>
+		  <path fill="#ff9922" d="M81.9,38.7c0.1,0.3,0.7,0.3,1.3,0.1c0.6-0.2,1-0.6,0.9-0.9c-0.1-0.3-0.7-0.3-1.3-0.1 C82.2,38,81.8,38.4,81.9,38.7z"></path>
+		  <path fill="#000000" d="M88.5,36.8c0.1,0.3-0.2,0.7-0.6,0.8c-0.5,0.2-0.9,0-1.1-0.3c-0.1-0.3,0.2-0.7,0.6-0.8C87.9,36.3,88.4,36.4,88.5,36.8z"></path>
+		  <path stroke="#000000" d="M85.9,38.9c0.2,0.6,0.8,0.9,1.4,0.7c0.6-0.2,0.9-0.9,0.6-2.1c0.3,1.2,1,1.7,1.6,1.5c0.6-0.2,0.9-0.8,0.8-1.4"></path>
+		  <path fill="#6994b7" stroke="#000000" d="M86.8,42.3l0.4,2.2c0.1,0.4,0.1,0.7,0.2,1.1l0.1,1.1c0.1,1.2-0.9,2.3-2.2,2.3c-1.3,0-2.5-0.8-2.5-1.9l-0.1-1 c0-0.3-0.1-0.6-0.2-1l-0.3-1.9"></path>
+		  <path fill="#6994b7" stroke="#000000" d="M96.2,40.3l0.5,2.7c0.1,0.5,0.2,0.9,0.2,1.4l0.1,1.4c0.1,1.5-0.9,2.8-2.2,2.9h0c-1.3,0-2.5-1.1-2.6-2.4 L92.1,45c0-0.4-0.1-0.8-0.2-1.2l-0.4-2.5"></path>
+		  <path fill="#000000" d="M91.1,34.1c0.3,0.7,0,1.4-0.7,1.6c-0.6,0.2-1.3-0.1-1.6-0.7c-0.2-0.6,0-1.4,0.7-1.6C90.1,33.1,90.8,33.5,91.1,34.1z"></path>
+		  <path fill="#000000" d="M85.5,36.3c0.2,0.6-0.1,1.2-0.7,1.5c-0.6,0.2-1.3,0-1.5-0.6C83,36.7,83.4,36,84,35.8C84.6,35.5,85.3,35.7,85.5,36.3z"></path>
+		</g>
+		</svg>
+	</div>
+	<div class="header">
+		<h1><<{{ story_name }}>></h1>
+		<a class="home-button" href="{{ url_for('index') }}">回主頁</a>
+	</div>
+    <div class="container">
+        <!-- 圖片和文字 -->
+        <div class="row my-5">
+            <div class="col-md-6">
+				<div class="img-container">
+					<img id="clickable-image" src={{ image_url }} alt="Your image description" class="img-fluid" />
+					<input type="hidden" id="click-count" value="0">
+					<button onclick="downloadImage('{{ image_url }}', 'myImage')" class="download-btn"></button>
+				</div>
+            </div>
+            <div class="col-md-6 canva">
+				<h2 id="story-text">{{ story }}</h2>
+				<div class="canvas-container" id="canvas-container">
+					<canvas id="live2d" class="mb-4" ></canvas>
+				</div>
+            </div>
+        </div>
+		{% if option_count == 4 %}
+			<div class="text-center mt-5">
+				<button id="back-to-index" class="btn btn-primary">回到主頁</button>
+			</div>
+		{% else %}
+			<div class="row my-5">
+				<div class="col-md-4 col-sm-4 col-md-4 text-center">
+					<button class="btn btn-primary btn-block fixed-size-btn" data-story="{{ button1 }}" onclick="updateStory(event)">{{ button1 }}</button>
+				</div>
+				<div class="col-md-4 col-sm-4 col-md-4 text-center">
+					<button class="btn btn-secondary btn-block fixed-size-btn" data-story="{{ button2 }}" onclick="updateStory(event)">{{ button2 }}</button>
+				</div>
+				<div class="col-md-4 col-sm-4 col-md-4 text-center">
+					<button class="btn btn-success btn-block fixed-size-btn" data-story="{{ button3 }}" onclick="updateStory(event)">{{ button3 }}</button>
+				</div>
+			</div>
+		{% endif %}
+		<script>
+			function setButtonSize() {
+				const buttons = document.querySelectorAll('.fixed-size-btn');
+				let maxWidth = 0;
+				let maxHeight = 0;
+		
+				// Find the maximum text width and height among the buttons
+				buttons.forEach(button => {
+					const textWidth = button.scrollWidth;
+					const textHeight = button.scrollHeight;
+					if (textWidth > maxWidth) {
+						maxWidth = textWidth;
+					}
+					if (textHeight > maxHeight) {
+						maxHeight = textHeight;
+					}
+				});
+		
+				// Add some padding and set the width and height for all buttons
+				const finalWidth = maxWidth; // Adding 40 for padding
+				const finalHeight = maxHeight; // Adding 20 for padding
+				buttons.forEach(button => {
+					button.style.width = finalWidth + 'px';
+					button.style.height = finalHeight + 'px';
+					button.style.marginBottom = '10px';
+				});
+				}
+	
+			document.addEventListener('DOMContentLoaded', setButtonSize);
+	
+			function updateStory(event) {
+				const item = event.target.getAttribute('data-story');
+				const storyNotButton = document.querySelector('h2').innerText;
+				// const audioElement = document.getElementById('myAudio');
+				var loading = document.getElementById('loading');
+        		loading.style.display = 'flex';	
+				$.ajax({
+					url: '/update_story',
+					type: 'POST',
+					data: {
+						buttonValue: item,
+						storyNotButton: storyNotButton
+					},
+					success: function (response) {
+						loading.style.display = 'none';
+						if (response.redirect) {
+        					window.location.href = "/story_over";
+   						 } else {
+							document.querySelector('.img-fluid').setAttribute('src', response.image_url);
+							document.querySelector('#story-text').innerText = response.story;
+							const buttons = document.querySelectorAll('.btn-block');
+							// audioElement.setAttribute('src', '/static/file'+response.option_count+'.mp3');
+							for (let i = 0; i < buttons.length; i++) {
+								buttons[i].innerText = response['button' + (i + 1)];
+								buttons[i].setAttribute('data-story', response['button' + (i + 1)]);
+							}
+							resetButtonSize();
+							setButtonSize();
+						}
+				}
+		});
+	}
+			function resetButtonSize() {
+				const buttons = document.querySelectorAll('.fixed-size-btn');
+				buttons.forEach(button => {
+					button.style.width = '';
+					button.style.height = '';
+				});
+			}
+		</script>
+		<script>
+			function downloadImage(imgsrc, name) {
+				let xhr = new XMLHttpRequest();
+				xhr.open("GET", imgsrc, true);
+				xhr.responseType = "blob";
+				xhr.onload = function () {
+					if (xhr.status === 200) {
+						let image = new Image();
+						image.onload = function () {
+							let canvas = document.createElement("canvas");
+							canvas.width = image.width;
+							canvas.height = image.height;
+							let context = canvas.getContext("2d");
+							context.drawImage(image, 0, 0, image.width, image.height);
+							let url = canvas.toDataURL("image/png");
+							let a = document.createElement("a");
+							a.download = name || "photo";
+							a.href = url;
+							a.style.display = 'none';
+							document.body.appendChild(a);
+							a.click();
+							document.body.removeChild(a);
+						};
+						image.src = URL.createObjectURL(xhr.response);
+					}
+				};
+				xhr.send();
+			}
+		</script>
+		<script>
+			$(document).ready(function () {
+				$("#clickable-image").on("click", function () {
+					let clickCount = parseInt($("#click-count").val()) + 1;
+					$("#click-count").val(clickCount);
+					$.ajax({
+						url: "/get_image_url",
+						method: "POST",
+						data: { click_count: clickCount },
+						success: function (response) {
+
+							$("#clickable-image").attr("src", response.imageUrl);
+						},
+						error: function (error) {
+							console.log("Error:", error);
+						}
+					});
+				});
+			});
+		</script>
+		<script>
+			$(document).ready(function () {
+				$("#back-to-index").on("click", function () {
+					window.location.href = "/";
+				});
+			});
+		</script>
+    </div>
+    <!-- 引入 jQuery 和 Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+

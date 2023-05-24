@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1900">
+  <title>TypeScript HTML App</title>
+  <style>
+    html, body {
+        margin: 0;
+        overflow: hidden;
+    }
+  </style>
+  <!-- Pollyfill script -->
+  <script src="https://unpkg.com/core-js-bundle@3.6.1/minified.js"></script>
+  <!-- Live2DCubismCore script -->
+  <script src = "../../../Core/live2dcubismcore.js"></script>
+  <!-- Build script -->
+  <script src = "./dist/bundle.js"></script>
+  <!-- 額外新增 -->
+  <link rel="stylesheet" href="live2d/css/live2d.css" />
+</head>
+<body>
+
+  <!-- Copy 別人的Demo-->
+  <div id="landlord">
+    <div class="message" style="opacity:0"></div>
+    <canvas id="live2d" width="280" height="250" class="live2d"></canvas>
+    <div class="hide-button">隱藏</div>
+  </div>
+  <script type="text/javascript" src="https://cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+  <script type="text/javascript">
+      var message_Path = '/live2d/'
+  </script>
+  <script type="text/javascript" src="live2d/js/message.js"></script>
+
+</body>
+</html>
