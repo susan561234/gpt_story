@@ -148,7 +148,10 @@ def start():
         story = story_generator.generate_story_beginning(style)
     except Exception as e:
         print(f"An error occurred: {e}")
-        return jsonify({'redirect': 404})
+        response = {
+            'redirect': 404
+        }
+        return jsonify(response)
     if "故事名稱:" in story:
         story_split =  story.split("故事名稱:")
         story_split_1 = story_split[1].split("故事開頭:")
@@ -192,7 +195,10 @@ def update_story():
         updated_data, option_count = story_generator.generate_story_item(button_value, option_count)
     except Exception as e:
         print(f"An error occurred: {e}")
-        return jsonify({'redirect': 404})
+        response = {
+            'redirect': 404
+        }
+        return jsonify(response)
     print(updated_data, option_count)
     updated_data = updated_data[5:]
     if option_count == 4 :
@@ -239,10 +245,13 @@ def update_story():
     else:
         button = updated_data.split("選項：1.")[1]
         story_notbutton = updated_data.split("選項：1.")[0][5:]
-
-    other_word = story_notbutton.split("故事內容")[0]
-    if len(other_word)>5 :
-        story_notbutton = story_notbutton.split("故事內容")[1][1:]
+    try:
+        other_word = story_notbutton.split("故事內容")[0]
+        if len(story_notbutton) != len(other_word):
+            story_notbutton = story_notbutton.split("故事內容")[1][1:]
+    except IndexError as e:
+        print("IndexError",e)
+        story_notbutton = story_notbutton.split("故事內容")[0]
     button1 = button.split("2.")[0]
     button3 = button.split("3.")[1]  
     button2 = button[len(button1)+2:len(button)-len(button3)-2]
