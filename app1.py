@@ -148,10 +148,8 @@ def start():
         story = story_generator.generate_story_beginning(style)
     except Exception as e:
         print(f"An error occurred: {e}")
-        response = {
-            'redirect': 404
-        }
-        return jsonify(response)
+
+        return redirect(url_for("index"))
     if "故事名稱:" in story:
         story_split =  story.split("故事名稱:")
         story_split_1 = story_split[1].split("故事開頭:")
@@ -190,7 +188,6 @@ def update_story():
     global option_count, content, image_url, main_character
     button_value = request.form.get('buttonValue')
     story_notbutton = request.form.get('storyNotButton')  
-    updated_data, option_count = story_generator.generate_story_item(button_value, option_count)
     try:
         updated_data, option_count = story_generator.generate_story_item(button_value, option_count)
     except Exception as e:
