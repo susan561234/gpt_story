@@ -53,7 +53,7 @@ class StoryGenerator:
         if option_count == 3:
             x = {"role":"user","content":""""請妳在這次回答給故事一個完美的結束內容,故事內容控制在80個字以上100個字以內,依照下列格式回應,故事內容:,<故事結束!>"""}
             self.messages.append(x)
-        for _ in range(3):
+        for i in range(3):
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 temperature=0.5,
@@ -62,6 +62,8 @@ class StoryGenerator:
             )
             ai_msg = response.choices[0].message.content.replace('\n', '')
             if "故事內容" not in ai_msg:
+                if i == 1:
+                    self.messages.append({"role":"user","content":""""請按照格式回應!!故事內容:,選項:1.,2.,3."""})
                 continue
             else:
                 break
