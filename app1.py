@@ -205,7 +205,6 @@ def index():
         response.set_cookie('user_id', user_id)
     else:
         response = make_response()
-    option_count = 0
     ip = request.remote_addr
     start_time = datetime.datetime.now()
     DB.DB_start(ip,start_time,datetime.datetime.combine(start_time.date(), datetime.datetime.min.time()))

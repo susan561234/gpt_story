@@ -70,17 +70,17 @@
 			}	
 		.download-btn:hover::before {
 			content: '下載圖片(・ω・)ノ';
-			display: inline-block; /* 確保元素可以接受寬度和高度設定 */
-			width: 150px; /* 設定懸浮文字框的寬度 */
-			height: 35px; /* 設定懸浮文字框的高度 */
-			text-align: center; /* 使文字水平居中 */
-			background-color: rgba(249, 248, 248, 0.925); /* 設定背景顏色，您可以根據需要更改 */
-			color: #413f3f; /* 設定文字顏色，您可以根據需要更改 */
-			border-radius: 5px; /* 如果需要圓角，可以添加這個屬性 */
-			position: absolute; /* 設定為絕對定位，以便更改懸浮文字框位置 */
-			top: -40px; /* 設定懸浮文字框與按鈕之間的距離 */
-			left: 50%; /* 將懸浮文字框水平居中對齊按鈕 */
-			transform: translateX(-50%); /* 修正懸浮文字框的水平位置，使其完全居中對齊按鈕 */
+			display: inline-block; 
+			width: 150px; 
+			height: 35px; 
+			text-align: center; 
+			background-color: rgba(249, 248, 248, 0.925); 
+			color: #413f3f; 
+			border-radius: 5px; 
+			position: absolute; 
+			top: -40px;
+			left: 50%; 
+			transform: translateX(-50%); 
 		}
 		.img-container:hover .download-btn {
 			display: block;
@@ -121,7 +121,7 @@
 			left: 0;
 			width: 100%;
 			height: 100%;
-			background-color: rgba(255, 255, 255, 0.8); /* 加载动画背景色，可调整透明度 */
+			background-color: rgba(255, 255, 255, 0.8); 
 			display: flex;
 			justify-content: center;
 			align-items: center;
@@ -156,10 +156,10 @@
 			padding: 10px 20px;
 		}
 		.download-btn:hover::before {
-			text-align: center; /* 使文字水平居中 */
-			top: -40px; /* 設定懸浮文字框與按鈕之間的距離 */
-			left: 20%; /* 將懸浮文字框水平居中對齊按鈕 */
-			transform: translateX(-90%); /* 修正懸浮文字框的水平位置，使其完全居中對齊按鈕 */
+			text-align: center; 
+			top: -40px;
+			left: 20%; 
+			transform: translateX(-90%); 
 		}
 
         }
@@ -271,9 +271,8 @@
 					}
 				});
 		
-				// Add some padding and set the width and height for all buttons
-				const finalWidth = maxWidth; // Adding 40 for padding
-				const finalHeight = maxHeight; // Adding 20 for padding
+				const finalWidth = maxWidth; 
+				const finalHeight = maxHeight;
 				buttons.forEach(button => {
 					button.style.width = finalWidth + 'px';
 					button.style.height = finalHeight + 'px';
@@ -382,7 +381,7 @@
 			});
 		</script>
     </div>
-    <!-- 引入 jQuery 和 Bootstrap JS -->
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
