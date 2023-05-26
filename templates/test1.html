@@ -224,7 +224,7 @@
 	</div>
 	<div class="header">
 		<h1><<{{ story_name }}>></h1>
-		<a class="home-button" href="{{ url_for('index') }}">回主頁</a>
+		<a class="home-button" href="{{ url_for('style') }}">回主頁</a>
 	</div>
     <div class="container">
         <!-- 圖片和文字 -->
@@ -298,18 +298,32 @@
 						loading.style.display = 'none';
 						if (response.redirect) {
 							if(response.redirect==404) {
-								window.location.href = "/";
+								window.location.href = "/style";
 							}
         					$('.fixed-size-btn').remove(); 
-							$('body').append('<button id="back-to-index" class="btn btn-primary" style="width: 125px; height: 85px; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at center, #bedee7, #c0dcfe); border: none; flex-wrap: wrap; display: inline-block; margin: 0 50% 20px 0; padding: 10px 20px; color: #333; cursor: pointer; font-size: 20px;">回到主頁</button>');
+							$('body').append('<input id="score-input" type="number" placeholder="為故事打個分數吧!" min="1" max="10" required="required" pattern="^([1-9]|10)$" style="width: 125px; height: 85px; display: flex";><br>');
+							$('body').append('<button id="back-to-index" class="btn btn-primary" style="width: 125px; height: 85px; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at center, #bedee7, #c0dcfe); border: none; flex-wrap: wrap; display: inline-block; margin: 0 50% 20px 0; padding: 10px 20px; color: #333; cursor: pointer; font-size: 20px;">回到主頁</button>'),
+
 							document.querySelector('.img-fluid').setAttribute('src', response.image_url);
 							document.querySelector('#story-text').innerText = response.story; 
 							$(document).ready(function () {
-								$("#back-to-index").on("click", function () {
-									window.location.href = "/";
-								});
+							$("#back-to-index").on("click", function () {
+								let score = $('#score-input').val();
+								if (score) {
+									$.ajax({
+										url: '/submit_score',  // 將要發送的URL
+										type: 'POST',          // 使用 POST 方法
+										data: { 'score': score }, // 要發送的數據
+										success: function(response) {
+											window.location.href = "/style";
+										}
+										});
+									} else {
+										alert("請輸入1-10的分數!");
+									}
+								})
 							});
-   						 } else {
+            } else {
 							document.querySelector('.img-fluid').setAttribute('src', response.image_url);
 							document.querySelector('#story-text').innerText = response.story;
 							const buttons = document.querySelectorAll('.btn-block');

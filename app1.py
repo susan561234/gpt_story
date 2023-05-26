@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, url_for, redirect, make_response
+from flask import Flask, render_template, jsonify, request, url_for, redirect, make_response, session
 import chaptgptget
 import Image
 from unidecode import unidecode
@@ -13,6 +13,13 @@ import uuid
 from dash import html
 from dash import dcc
 from openai.error import RateLimitError
+import mysqldatabase as md
+from werkzeug.security import generate_password_hash,check_password_hash
+from datetime import timedelta
+import os
+import configparser
+
+
 
 def story_split_start(story):
     if "故事名稱:" in story:
@@ -95,8 +102,13 @@ def page_not_found(e):
   return render_template('404.html'), 404
 
 app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+config = configparser.ConfigParser()
+config.read(os.path.join(BASE_DIR ,'config.ini'))
+app.config['SECRET_KEY']=config.get('flask', 'SECRET_KEY')
+app.permanent_session_lifetime = timedelta(hours=1)
 app.register_error_handler(404, page_not_found)
-
+MD = md.User()
 DB = mongod.DB()
 external_stylesheets = [
     {
@@ -136,7 +148,7 @@ app1.layout = html.Div(
         html.Div(
             [       
                 html.P(children="統計圖表", className="header-description"),
-                html.A('回主頁', href='/', className="home-button"),
+                html.A('回主頁', href='/style', className="home-button"),
             ],
             className="header",
         ),
@@ -190,28 +202,83 @@ def update_scatter_plot(selected_index):
     }
     return fig1, fig2
 
-@app.route('/', methods = ['POST', 'GET'])
+@app.route('/',methods=['POST','GET'])
 def index():
+    return render_template('login.html')  
+@app.route('/style', methods = ['POST', 'GET'])
+def style():
     global option_count, ip, start_time, content , imgurl, story_generator,DB
     option_count = 0
     content = ""
     imgurl = dict()
     story_generator = chaptgptget.StoryGenerator()
     DB = mongod.DB()
-    user_id = request.cookies.get('user_id')
-    if user_id is None:
-        user_id = str(uuid.uuid4())
-        response = make_response()
-        response.set_cookie('user_id', user_id)
-    else:
-        response = make_response()
+    MD = md.User()
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     ip = request.remote_addr
     start_time = datetime.datetime.now()
-    DB.DB_start(ip,start_time,datetime.datetime.combine(start_time.date(), datetime.datetime.min.time()))
+    DB.DB_start(ip,session.get('user_id'),start_time,datetime.datetime.combine(start_time.date(), datetime.datetime.min.time()))
     return render_template('index.html', **locals())
+@app.route('/login',methods=['POST','GET'])
+def login():
+    return render_template('login.html')  
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+@app.route('/register')
+def register():
+    return render_template('register.html')
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json
+    username = data.get('login_name')
+    password = data.get('login_pass11')
+    users_list = MD.get_users_list()
+    password_confim = MD.get_password(username)
+    if not all([username, password]):
+        return jsonify({"message": "少填寫一項"}), 400
+    if username not in users_list[0] or not check_password_hash(password_confim.decode("utf-8"), password):
+        return jsonify({"message": "帳號密碼錯誤"}), 400
+    session['user_id'] = username
+    session.permanent = True
+    return jsonify({"message": "登入成功"}), 200
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.json
+    print(data)
+    username = data.get('login_name')
+    password = data.get('login_pass11')
+    confirm_password = data.get('login_pass12')
+    email = data.get('u_email')
+    sex = data.get('u_sex')
+    users_list = MD.get_users_list()
+    if not all([username, password, confirm_password, email]):
+        return jsonify({"message": "Missing required fields"}), 400
+
+    if password != confirm_password:
+        return jsonify({"message": "Passwords do not match"}), 400
+
+    if username in users_list:
+        return jsonify({"message": "Username already exists"}), 400
+    hashed_password = generate_password_hash(password)
+    MD.insert_user(username,hashed_password,email,sex,)
+    return jsonify({"message": "Registration successful"}), 200
+
+
+
 @app.route('/teammember', methods = ['POST', 'GET'])
 def teammember():
     return render_template('teammember.html')
+@app.route('/submit_score', methods=['POST'])
+def submit_score():
+    global score
+    score = request.form.get('score')
+    story_id = MD.get_story_id(userid,story_name)
+    MD.insert_score(story_id,userid,score)
+    MD.logout()
+    return 'Score received' 
 @app.route('/start', methods = ['POST', 'GET'])
 def start():
     global story_name, imgurl, content, image_url, main_character, style
@@ -230,7 +297,7 @@ def start():
 
 @app.route('/update_story', methods=['POST'])
 def update_story():
-    global option_count, content, image_url, main_character
+    global option_count, content, image_url, main_character, userid
     button_value = request.form.get('buttonValue')
     content += button_value#上次所選的選項
     try:
@@ -253,6 +320,8 @@ def update_story():
             'image_url': image_url1,
             'redirect': option_count
         }
+        userid = MD.get_user_id(session.get('user_id'))
+        MD.insert_story(userid,start_time,datetime.datetime.now(),style,story_name,content)
         DB.DB_over(ip,start_time,datetime.datetime.now(),datetime.datetime.combine(datetime.datetime.now().date(), datetime.datetime.min.time()),style,story_name,content,imgurl)
         return jsonify(response)
     try:

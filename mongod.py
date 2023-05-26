@@ -26,10 +26,10 @@ class DB:
   def __init__(self):
     self.myclient = pymongo.MongoClient("mongodb://localhost:27017/")
     self.mydb = self.myclient["test"]
-  def DB_start(self,ip,start_time,datatime):
+  def DB_start(self,ip,user_id,start_time,datatime):
     # dblst = myclient.list_database_names()
     mycol = self.mydb["start"]
-    data = {"ip": ip,"start_time":start_time,"datatime":datatime}
+    data = {"ip": ip,"user_id":user_id,"start_time":start_time,"datatime":datatime}
     inserted_document = mycol.insert_one(data)
   def DB_over(self,ip,start_time,over_time,datatime,style,storyname,completestory,imgurl):
     mycol = self.mydb["story"]

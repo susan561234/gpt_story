@@ -78,3 +78,4 @@ class StoryGenerator:
         
         return ai_msg, option_count
 
+
